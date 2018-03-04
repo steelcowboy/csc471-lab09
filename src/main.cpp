@@ -36,6 +36,7 @@ public:
 
 	// Shapes to be used (from obj file)
 	std::vector<shared_ptr<Shape>> AllShapes;
+	shared_ptr<Shape> tmp;
 	//meshes with just one shape
 	shared_ptr<Shape> world;
 	shared_ptr<Shape> Nef;
@@ -71,28 +72,34 @@ public:
 	vec3 gDTrans = vec3(0);
 	float gDScale = 1.0;
 
+    // Transforms for shape objs
+    std::vector<vec3> sTrans_v; 
+    std::vector<float> sScale_v;
+
 	float cTheta = 0;
 	bool mouseDown = false;
 
 
 	void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
 	{
-		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		{
-			glfwSetWindowShouldClose(window, GL_TRUE);
-		}
-		else if (key == GLFW_KEY_M && action == GLFW_PRESS)
-		{
-			gMat = (gMat + 1) % 4;
-		}
-		else if (key == GLFW_KEY_A && action == GLFW_PRESS)
-		{
-			cTheta += 5;
-		}
-		else if (key == GLFW_KEY_D && action == GLFW_PRESS)
-		{
-			cTheta -= 5;
-		}
+        if (action == GLFW_PRESS)
+        {
+            switch (key)
+            {
+                case GLFW_KEY_ESCAPE:
+                    glfwSetWindowShouldClose(window, GL_TRUE);
+                    break;
+                case GLFW_KEY_M:
+                    gMat = (gMat + 1) % 4;
+                    break;
+                case GLFW_KEY_A:
+                    cTheta += 5;
+                    break;
+                case GLFW_KEY_D:
+                    cTheta -= 5;
+                    break;
+            }
+        }
 	}
 
 	void scrollCallback(GLFWwindow* window, double deltaX, double deltaY)
@@ -232,8 +239,26 @@ public:
 				// 3. measure each shape to find out its AABB
 				// 4. call init on each shape to create the GPU data
 				// perform some record keeping to keep track of global min and max
+                tmp = make_shared<Shape>();
+                tmp->createShape(TOshapes[i]);
+                tmp->measure();
+                tmp->init();
+                AllShapes.push_back(tmp);
 
-				// Add the shape to AllShapes
+                sTrans_v.push_back(tmp->min + 0.5f*(tmp->max - tmp->min));
+                if (tmp->max.x >tmp->max.y && tmp->max.x > tmp->max.z)
+                {
+                    sScale_v.push_back(2.f / (tmp->max.x-tmp->min.x));
+                }
+                else if (tmp->max.y > tmp->max.x && tmp->max.y > tmp->max.z)
+                {
+                    sScale_v.push_back(2.f / (tmp->max.y-tmp->min.y));
+                }
+                else
+                {
+                    sScale_v.push_back(2.f / (tmp->max.z-tmp->min.z));
+                }
+
 			}
 
 			// think about scale and translate....
@@ -414,6 +439,25 @@ public:
 
 		// TODO add code for the transforms for the dummy and loop over
 		// all the shapes in the dummy to draw it
+        for (size_t i = 0; i < AllShapes.size(); i++)
+        {
+            MV->pushMatrix();
+            {
+                MV->loadIdentity();
+                MV->rotate(radians(cTheta), vec3(0, 1, 0));
+
+                /* draw left mesh */
+                MV->pushMatrix();
+                MV->translate(sTrans_v[i]);
+                MV->rotate(radians(-90.f), vec3(1, 0, 0));
+                MV->scale(sScale_v[i]);
+                MV->translate(-1.0f*sTrans_v[i]);
+                SetMaterial(2);
+                glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
+                AllShapes[i]->draw(prog);
+            }
+            MV->popMatrix();
+        }
 
 		MV->popMatrix();
 		prog->unbind();
