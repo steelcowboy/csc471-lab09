@@ -313,6 +313,9 @@ class Application : public EventCallbacks
                 gScale = 2.f / (Nef->max.z - Nef->min.z);
             }
 
+            //cout << gTrans.x << " " << gScale << endl; 
+            //cout << gDTrans.x << " " << gDScale << endl; 
+
             // Initialize the geometry to render a ground plane
             initQuad();
         }
@@ -449,8 +452,10 @@ class Application : public EventCallbacks
                     /* draw left mesh */
                     MV->pushMatrix();
                     MV->translate(sTrans_v[i]);
+                    //std::cout << "Shape " << i << " translate: " << sTrans_v[i].x << std::endl;
                     MV->rotate(radians(-90.f), vec3(1, 0, 0));
                     MV->scale(sScale_v[i]);
+                    //std::cout << "Shape " << i << " scale: " << sScale_v[i] << std::endl;
                     MV->translate(-1.0f*sTrans_v[i]);
                     SetMaterial(2);
                     glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
