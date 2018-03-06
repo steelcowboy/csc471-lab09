@@ -22,6 +22,10 @@
 using namespace std;
 using namespace glm;
 
+void printVec(vec3 &v)
+{
+    cout << "(" << v.x << ", " << v.y << ", " << v.z << ")" << endl;
+}
 
 class Application : public EventCallbacks
 {
@@ -74,7 +78,9 @@ class Application : public EventCallbacks
 
         // Transforms for shape objs
         std::vector<float> sScale_v;
-        vec3 GTransMin, GTransMax;
+        float dScale;
+        vec3 dTransMin, dTransMax;
+        vec3 dMid;
 
         float cTheta = 0;
         bool mouseDown = false;
@@ -228,12 +234,9 @@ class Application : public EventCallbacks
             else
             {
                 // some data to keep track of where our mesh is in space
-                GTransMin = vec3(std::numeric_limits<float>::max());
-                GTransMax = vec3(-std::numeric_limits<float>::min());
+                dTransMax = vec3(-std::numeric_limits<float>::max());
+                dTransMin = vec3(std::numeric_limits<float>::max());
                 vec3 tmp_trans;
-
-                auto vec3_gt = [](vec3 a, vec3 b) { return a.x > b.x && a.y > b.y && a.z > b.z; };
-                auto vec3_lt = [](vec3 a, vec3 b) { return a.x < b.x && a.y < b.y && a.z < b.z; };
 
                 for (size_t i = 0; i < TOshapes.size(); i++)
                 {
@@ -249,29 +252,34 @@ class Application : public EventCallbacks
                     tmp->init();
                     AllShapes.push_back(tmp);
 
-                    tmp_trans = tmp->min + 0.5f*(tmp->max - tmp->min);
+                    cout << "Shape " << i << " min: "; printVec(tmp->min);
+                    cout << "Shape " << i << " max: "; printVec(tmp->max);
+                    dTransMax = vec3(std::max(tmp->max.x, dTransMax.x), std::max(tmp->max.y, dTransMax.y), std::max(tmp->max.z, dTransMax.z));
+                    dTransMin = vec3(std::min(tmp->min.x, dTransMin.x), std::min(tmp->min.y, dTransMin.y), std::min(tmp->min.z, dTransMin.z));
+                     
 
-                    // TODO: Fix this and scale by 1/max(w,h,l);
-                    GTransMax = (vec3_gt(tmp_trans, GTransMax)) ? tmp_trans: GTransMax;
-                    GTransMin = (vec3_lt(tmp_trans, GTransMin)) ? tmp_trans: GTransMin;
-
-                    if (tmp->max.x >tmp->max.y && tmp->max.x > tmp->max.z)
-                    {
-                        sScale_v.push_back(2.f / (tmp->max.x-tmp->min.x));
-                    }
-                    else if (tmp->max.y > tmp->max.x && tmp->max.y > tmp->max.z)
-                    {
-                        sScale_v.push_back(2.f / (tmp->max.y-tmp->min.y));
-                    }
-                    else
-                    {
-                        sScale_v.push_back(2.f / (tmp->max.z-tmp->min.z));
-                    }
-
+                    //if (tmp->max.x >tmp->max.y && tmp->max.x > tmp->max.z)
+                    //{
+                        //sScale_v.push_back(2.f / (tmp->max.x-tmp->min.x));
+                    //}
+                    //else if (tmp->max.y > tmp->max.x && tmp->max.y > tmp->max.z)
+                    //{
+                        //sScale_v.push_back(2.f / (tmp->max.y-tmp->min.y));
+                    //}
+                    //else
+                    //{
+                        //sScale_v.push_back(2.f / (tmp->max.z-tmp->min.z));
+                    //}
                 }
 
                 // think about scale and translate....
                 // based on the results of calling measure on each peice
+                dMid = 0.5f*vec3(dTransMax.x - dTransMin.x, dTransMax.y - dTransMin.y, dTransMax.z - dTransMin.z);
+                dMid = 0.01f * dMid;
+                dScale = 1/(2.0*(std::max(std::max(dMid.x, dMid.y), dMid.z)));
+
+                cout << "dMid: "; printVec(dMid); 
+                cout << "dScale: " << dScale << endl;
             }
 
             // now read in the sphere for the world
@@ -459,12 +467,11 @@ class Application : public EventCallbacks
                     MV->rotate(radians(cTheta), vec3(0, 1, 0));
 
                     /* draw left mesh */
-                    MV->translate(GTransMin);
-                    //std::cout << "Shape " << i << " translate: " << sTrans_v[i].x << std::endl;
-                    //MV->rotate(radians(-90.f), vec3(1, 0, 0));
-                    MV->scale(sScale_v[i]);
-                    //std::cout << "Shape " << i << " scale: " << sScale_v[i] << std::endl;
-                    MV->translate(-1.0f*GTransMax);
+                    MV->translate(vec3(0, -1, -5));
+                    MV->rotate(radians(-90.f), vec3(1, 0, 0));
+                    MV->rotate(radians(-90.f), vec3(0, 0, 1));
+                    MV->scale(0.02*dScale);
+                    MV->translate(dMid);
                     SetMaterial(2);
                     glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
                     AllShapes[i]->draw(prog);
