@@ -152,7 +152,7 @@ class Application : public EventCallbacks
             texture1->setFilename(resourceDirectory + "/world.jpg");
             texture1->init();
             texture1->setUnit(1);
-            texture1->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+            texture1->setWrapModes(GL_REPEAT, GL_REPEAT);
 
             texture2 = make_shared<Texture>();
             texture2->setFilename(resourceDirectory + "/grass.jpg");
@@ -252,24 +252,8 @@ class Application : public EventCallbacks
                     tmp->init();
                     AllShapes.push_back(tmp);
 
-                    cout << "Shape " << i << " min: "; printVec(tmp->min);
-                    cout << "Shape " << i << " max: "; printVec(tmp->max);
                     dTransMax = vec3(std::max(tmp->max.x, dTransMax.x), std::max(tmp->max.y, dTransMax.y), std::max(tmp->max.z, dTransMax.z));
                     dTransMin = vec3(std::min(tmp->min.x, dTransMin.x), std::min(tmp->min.y, dTransMin.y), std::min(tmp->min.z, dTransMin.z));
-                     
-
-                    //if (tmp->max.x >tmp->max.y && tmp->max.x > tmp->max.z)
-                    //{
-                        //sScale_v.push_back(2.f / (tmp->max.x-tmp->min.x));
-                    //}
-                    //else if (tmp->max.y > tmp->max.x && tmp->max.y > tmp->max.z)
-                    //{
-                        //sScale_v.push_back(2.f / (tmp->max.y-tmp->min.y));
-                    //}
-                    //else
-                    //{
-                        //sScale_v.push_back(2.f / (tmp->max.z-tmp->min.z));
-                    //}
                 }
 
                 // think about scale and translate....
@@ -329,9 +313,6 @@ class Application : public EventCallbacks
             {
                 gScale = 2.f / (Nef->max.z - Nef->min.z);
             }
-
-            //cout << gTrans.x << " " << gScale << endl; 
-            //cout << gDTrans.x << " " << gDScale << endl; 
 
             // Initialize the geometry to render a ground plane
             initQuad();
@@ -491,12 +472,25 @@ class Application : public EventCallbacks
 
             /* draw right mesh */
             MV->pushMatrix();
-            MV->translate(vec3(2, 0.f, -5));
-            MV->scale(gDScale);
-            MV->translate(-1.0f*gDTrans);
-            glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
-            texture1->bind(texProg->getUniform("Texture0"));
-            world->draw(texProg);
+            {
+                MV->translate(vec3(2, 0.f, -5));
+                MV->scale(gDScale);
+                MV->translate(-1.0f*gDTrans);
+                glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
+                texture1->bind(texProg->getUniform("Texture0"));
+                world->draw(texProg);
+            }
+            MV->popMatrix();
+
+            MV->pushMatrix();
+            {
+                MV->translate(vec3(4, 0.f, -3));
+                MV->scale(gDScale);
+                MV->translate(-1.0f*gDTrans);
+                glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
+                texture2->bind(texProg->getUniform("Texture0"));
+                world->draw(texProg);
+            }
             MV->popMatrix();
 
             /*draw the ground */
