@@ -6,10 +6,9 @@ in float dCo;
 out vec4 Outcolor;
 
 void main() {
-  vec4 texColor0 = texture(Texture0, vTexCoord);
- 
-  	Outcolor = dCo*texColor0;
-  
-	//DEBUG:Outcolor = vec4(vTexCoord.s, vTexCoord.t, 0, 1);
+    vec4 texColor0 = texture(Texture0, vTexCoord);
+    Outcolor = dCo*texColor0;
+
+    //DEBUG:Outcolor = vec4(vTexCoord.s, vTexCoord.t, 0, 1);
 }
 
