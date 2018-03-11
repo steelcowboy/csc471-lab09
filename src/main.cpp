@@ -37,6 +37,7 @@ class Application : public EventCallbacks
         // Our shader program
         std::shared_ptr<Program> prog;
         std::shared_ptr<Program> texProg;
+        std::shared_ptr<Program> texProg1;
 
         // Shapes to be used (from obj file)
         std::vector<shared_ptr<Shape>> AllShapes;
@@ -211,6 +212,23 @@ class Application : public EventCallbacks
             texProg->addAttribute("vertNor");
             texProg->addAttribute("vertTex");
             texProg->addUniform("Texture0");
+
+            texProg1 = make_shared<Program>();
+            texProg1->setVerbose(true);
+            texProg1->setShaderNames(
+                    resourceDirectory + "/tex_vert.glsl",
+                    resourceDirectory + "/tex_frag1.glsl");
+            if (! texProg1->init())
+            {
+                std::cerr << "One or more shaders failed to compile... exiting!" << std::endl;
+                exit(1);
+            }
+            texProg1->addUniform("P");
+            texProg1->addUniform("MV");
+            texProg1->addAttribute("vertPos");
+            texProg1->addAttribute("vertNor");
+            texProg1->addAttribute("vertTex");
+            texProg1->addUniform("Texture0");
         }
 
         void initGeom(const std::string& resourceDirectory)
@@ -473,25 +491,15 @@ class Application : public EventCallbacks
             /* draw right mesh */
             MV->pushMatrix();
             {
-                MV->translate(vec3(2, 0.f, -5));
-                MV->scale(gDScale);
-                MV->translate(-1.0f*gDTrans);
-                glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
-                texture1->bind(texProg->getUniform("Texture0"));
-                world->draw(texProg);
-            }
-            MV->popMatrix();
-
-            MV->pushMatrix();
-            {
                 MV->translate(vec3(4, 0.f, -3));
                 MV->scale(gDScale);
                 MV->translate(-1.0f*gDTrans);
-                glUniformMatrix4fv(prog->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
+                glUniformMatrix4fv(texProg->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
                 texture2->bind(texProg->getUniform("Texture0"));
                 world->draw(texProg);
             }
             MV->popMatrix();
+
 
             /*draw the ground */
             glUniformMatrix4fv(texProg->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
@@ -499,8 +507,27 @@ class Application : public EventCallbacks
             renderGround();
 
             MV->popMatrix();
-            P->popMatrix();
             texProg->unbind();
+
+            texProg1->bind();
+            glUniformMatrix4fv(texProg1->getUniform("P"), 1, GL_FALSE, value_ptr(P->topMatrix()));
+
+            MV->pushMatrix();
+            {
+                MV->loadIdentity();
+                MV->rotate(radians(cTheta), vec3(0, 1, 0));
+                MV->translate(vec3(2, 0.f, -5));
+                MV->rotate(radians(20*glfwGetTime()), vec3(0, 1, 0));
+                MV->scale(gDScale);
+                MV->translate(-1.0f*gDTrans);
+                glUniformMatrix4fv(texProg->getUniform("MV"), 1, GL_FALSE,value_ptr(MV->topMatrix()) );
+                texture1->bind(texProg1->getUniform("Texture0"));
+                world->draw(texProg1);
+            }
+            MV->popMatrix();
+
+            P->popMatrix();
+            texProg1->unbind();
         }
 
         // helper function to set materials for shading
