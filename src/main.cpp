@@ -153,13 +153,13 @@ class Application : public EventCallbacks
             texture1->setFilename(resourceDirectory + "/world.jpg");
             texture1->init();
             texture1->setUnit(1);
-            texture1->setWrapModes(GL_REPEAT, GL_REPEAT);
+            texture1->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
 
             texture2 = make_shared<Texture>();
             texture2->setFilename(resourceDirectory + "/grass.jpg");
             texture2->init();
             texture2->setUnit(2);
-            texture2->setWrapModes(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+            texture2->setWrapModes(GL_REPEAT, GL_REPEAT);
         }
 
         //code to set up the two shaders - a diffuse shader and texture mapping
@@ -361,9 +361,9 @@ class Application : public EventCallbacks
 
             float GrndTex[] = {
                 0, 0, // back
-                0, 1,
-                1, 1,
-                1, 0
+                0, 20,
+                20, 20,
+                20, 0
             };
 
             unsigned short idx[] = {0, 1, 2, 0, 2, 3};
